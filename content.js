@@ -1,5 +1,3 @@
-// content.js
-
 function scrapeJobDetails() {
   const jobDetails = {
     title: '',
@@ -11,19 +9,51 @@ function scrapeJobDetails() {
   try {
     // Naukri
     if (window.location.href.includes('naukri.com')) {
-      const titleElement = document.querySelector('h1.styles_jd-header-title__rZwM1');
-      if (titleElement) {
-        jobDetails.title = titleElement.innerText.trim();
+      // Title - multiple possible selectors
+      const titleSelectors = [
+        'h1.styles_jd-header-title__rZwM1',
+        'h1[title]',
+        '.styles_jd-header-title__rZwM1'
+      ];
+      
+      for (const selector of titleSelectors) {
+        const titleElement = document.querySelector(selector);
+        if (titleElement) {
+          jobDetails.title = titleElement.innerText.trim();
+          break;
+        }
       }
 
-      const companyElement = document.querySelector('div.styles_jd-header-comp-name__MvqAI > a');
-      if (companyElement) {
-        jobDetails.company = companyElement.innerText.trim();
+      // Company - multiple possible selectors
+      const companySelectors = [
+        'div.styles_jd-header-comp-name__MvqAI > a',
+        '.styles_jd-header-comp-name__MvqAI a',
+        'a[title*="Careers"]'
+      ];
+      
+      for (const selector of companySelectors) {
+        const companyElement = document.querySelector(selector);
+        if (companyElement) {
+          jobDetails.company = companyElement.innerText.trim();
+          break;
+        }
       }
 
-      const locationElement = document.querySelector('div.styles_jhc__loc___Du2H > span > a');
-      if (locationElement) {
-        jobDetails.location = locationElement.innerText.trim();
+      // Location - more flexible selectors
+      const locationSelectors = [
+        'div.styles_jhc__loc___Du2H > span > a', // Original with link
+        'div.styles_jhc__loc___Du2H > span.styles_jhc__location__W_pVs > a', // More specific with link
+        'div.styles_jhc__loc___Du2H > span', // Without link
+        '.styles_jhc__location__W_pVs', // Just the location span
+        '.styles_jhc__loc___Du2H span' // Any span inside location div
+      ];
+      
+      for (const selector of locationSelectors) {
+        const locationElement = document.querySelector(selector);
+        if (locationElement) {
+          jobDetails.location = locationElement.innerText.trim();
+          break;
+        }
       }
     }
     // LinkedIn
@@ -45,6 +75,9 @@ function scrapeJobDetails() {
       jobDetails.location = document.querySelector('div.text-gray-500')?.innerText.trim();
     }
 
+    // Log the results for debugging
+    console.log('Job Trackr: Scraped data:', jobDetails);
+    
     return jobDetails;
 
   } catch (error) {
@@ -53,11 +86,39 @@ function scrapeJobDetails() {
   }
 }
 
-// Send scraped data to the background script
-const jobData = scrapeJobDetails();
-if (jobData && jobData.title) {
-  chrome.runtime.sendMessage({
-    type: 'JOB_DETAILS',
-    payload: jobData
+// Wait for page to be fully loaded before scraping
+function waitForPageLoad() {
+  return new Promise((resolve) => {
+    if (document.readyState === 'complete') {
+      resolve();
+    } else {
+      window.addEventListener('load', resolve);
+    }
   });
 }
+
+// Main execution
+async function executeScript() {
+  await waitForPageLoad();
+  
+  // Add a small delay to ensure dynamic content is loaded
+  setTimeout(() => {
+    const jobData = scrapeJobDetails();
+    
+    if (jobData && jobData.title) {
+      chrome.runtime.sendMessage({
+        type: 'JOB_DETAILS',
+        payload: jobData
+      });
+    } else {
+      console.log('Job Trackr: No job data found or title missing');
+      console.log('Available elements:', {
+        titleElements: document.querySelectorAll('h1'),
+        companyElements: document.querySelectorAll('a[href*="careers"], a[href*="company"]'),
+        locationElements: document.querySelectorAll('[class*="location"], [class*="loc"]')
+      });
+    }
+  }, 1000); // 1 second delay
+}
+
+executeScript();
