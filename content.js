@@ -1,3 +1,12 @@
+// content.js
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'getJobDetails') {
+    const jobDetails = scrapeJobDetails();
+    sendResponse(jobDetails);
+  }
+});
+
 function scrapeJobDetails() {
   const jobDetails = {
     title: '',
@@ -8,7 +17,7 @@ function scrapeJobDetails() {
 
   try {
     // Naukri
-    if (window.location.href.includes('naukri.com')) {
+  if (window.location.href.includes('naukri.com')) {
       // Title - multiple possible selectors
       const titleSelectors = [
         'h1.styles_jd-header-title__rZwM1',
@@ -73,52 +82,15 @@ function scrapeJobDetails() {
       jobDetails.title = document.querySelector('h1')?.innerText.trim();
       jobDetails.company = document.querySelector('a[href^="/company/"]')?.innerText.trim();
       jobDetails.location = document.querySelector('div.text-gray-500')?.innerText.trim();
-    }
+  }
 
     // Log the results for debugging
     console.log('Job Trackr: Scraped data:', jobDetails);
-    
-    return jobDetails;
 
-  } catch (error) {
+  return jobDetails;
+  
+    } catch (error) {
     console.error("Job Trackr: Error scraping job details:", error);
     return jobDetails; // Return empty details on error
   }
 }
-
-// Wait for page to be fully loaded before scraping
-function waitForPageLoad() {
-  return new Promise((resolve) => {
-    if (document.readyState === 'complete') {
-      resolve();
-    } else {
-      window.addEventListener('load', resolve);
-    }
-  });
-}
-
-// Main execution
-async function executeScript() {
-  await waitForPageLoad();
-  
-  // Add a small delay to ensure dynamic content is loaded
-  setTimeout(() => {
-    const jobData = scrapeJobDetails();
-    
-    if (jobData && jobData.title) {
-      chrome.runtime.sendMessage({
-        type: 'JOB_DETAILS',
-        payload: jobData
-      });
-    } else {
-      console.log('Job Trackr: No job data found or title missing');
-      console.log('Available elements:', {
-        titleElements: document.querySelectorAll('h1'),
-        companyElements: document.querySelectorAll('a[href*="careers"], a[href*="company"]'),
-        locationElements: document.querySelectorAll('[class*="location"], [class*="loc"]')
-      });
-    }
-  }, 1000); // 1 second delay
-}
-
-executeScript();
