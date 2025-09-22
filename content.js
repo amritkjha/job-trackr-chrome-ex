@@ -1,5 +1,4 @@
 // content.js
-
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'getJobDetails') {
     const jobDetails = scrapeJobDetails();
@@ -12,12 +11,13 @@ function scrapeJobDetails() {
     title: '',
     company: '',
     location: '',
+    logo: '',
     url: window.location.href
   };
 
   try {
     // Naukri
-  if (window.location.href.includes('naukri.com')) {
+    if (window.location.href.includes('naukri.com')) {
       // Title - multiple possible selectors
       const titleSelectors = [
         'h1.styles_jd-header-title__rZwM1',
@@ -64,32 +64,99 @@ function scrapeJobDetails() {
           break;
         }
       }
+
+      // Logo - multiple possible selectors
+      const logoSelectors = [
+        '.styles_jhc__comp-banner__ynBvr', // Main selector from your HTML
+        'img[alt="Company Logo"]',
+        '.styles_jhc__top img',
+        '.styles_jhc__right img',
+        'img[src*="logo"]',
+        'img[srcset*="logo"]'
+      ];
+      
+      for (const selector of logoSelectors) {
+        const logoElement = document.querySelector(selector);
+        if (logoElement) {
+          // Get the best quality image source
+          jobDetails.logo = logoElement.srcset ? 
+            logoElement.srcset.split(',')[0].split(' ')[0] : 
+            logoElement.src;
+          if (jobDetails.logo) break;
+        }
+      }
     }
     // LinkedIn
     else if (window.location.href.includes('linkedin.com/jobs/view')) {
       jobDetails.title = document.querySelector('h1.jobs-top-card__job-title, h1.top-card-layout__title')?.innerText.trim();
       jobDetails.company = document.querySelector('a.jobs-top-card__company-name, a.topcard__org-name-link')?.innerText.trim();
       jobDetails.location = document.querySelector('span.jobs-top-card__bullet, span.topcard__flavor--bullet')?.innerText.trim();
+      
+      // LinkedIn logo selectors
+      const linkedinLogoSelectors = [
+        '.jobs-top-card__company-logo img',
+        '.topcard__company-logo img',
+        'img[alt*="logo" i]',
+        '.jobs-company__logo img'
+      ];
+      
+      for (const selector of linkedinLogoSelectors) {
+        const logoElement = document.querySelector(selector);
+        if (logoElement && logoElement.src) {
+          jobDetails.logo = logoElement.src;
+          break;
+        }
+      }
     }
     // Indeed
     else if (window.location.href.includes('indeed.com/viewjob')) {
       jobDetails.title = document.querySelector('h1.jobsearch-JobInfoHeader-title')?.innerText.trim();
       jobDetails.company = document.querySelector('div[data-testid="inlineHeader-companyName"]')?.innerText.trim();
       jobDetails.location = document.querySelector('div[data-testid="inlineHeader-companyLocation"]')?.innerText.trim();
+      
+      // Indeed logo selectors  
+      const indeedLogoSelectors = [
+        'img[data-testid="companyLogo"]',
+        '.jobsearch-CompanyAvatar img',
+        'img[alt*="logo" i]'
+      ];
+      
+      for (const selector of indeedLogoSelectors) {
+        const logoElement = document.querySelector(selector);
+        if (logoElement && logoElement.src) {
+          jobDetails.logo = logoElement.src;
+          break;
+        }
+      }
     }
     // AngelList
     else if (window.location.href.includes('angel.co/company')) {
       jobDetails.title = document.querySelector('h1')?.innerText.trim();
       jobDetails.company = document.querySelector('a[href^="/company/"]')?.innerText.trim();
       jobDetails.location = document.querySelector('div.text-gray-500')?.innerText.trim();
-  }
+      
+      // AngelList logo selectors
+      const angelLogoSelectors = [
+        '.company-avatar img',
+        'img[alt*="logo" i]',
+        '.company-header img'
+      ];
+      
+      for (const selector of angelLogoSelectors) {
+        const logoElement = document.querySelector(selector);
+        if (logoElement && logoElement.src) {
+          jobDetails.logo = logoElement.src;
+          break;
+        }
+      }
+    }
 
     // Log the results for debugging
     console.log('Job Trackr: Scraped data:', jobDetails);
+    
+    return jobDetails;
 
-  return jobDetails;
-  
-    } catch (error) {
+  } catch (error) {
     console.error("Job Trackr: Error scraping job details:", error);
     return jobDetails; // Return empty details on error
   }

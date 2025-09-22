@@ -13,10 +13,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (response) {
         currentJobDetails = response;
         jobDetailsContainer.innerHTML = `
-          <div><strong>Title:</strong> ${response.title}</div>
-          <div><strong>Company:</strong> ${response.company}</div>
-          <div><strong>Location:</strong> ${response.location}</div>
-          <div><strong>URL:</strong> <a href="${response.url}" target="_blank">${response.url}</a></div>
+          <div style="display: flex;align-items: center;"><img style="width: 48px; height: 48px; margin-right: 3px;" src="${response.logo}"><h2>${response.title}</h2></div>
+          <div style="display: flex;justify-content: space-between;align-items: center;"><h3 style="font-weight: 500;">${response.company}</h3><p> ${response.location}</p></div>
+          <div style="margin: 0 auto;width: fit-content;"><strong><a href="${response.url}" target="_blank">Apply now</a></strong></div>
         `;
       }
     });
@@ -29,10 +28,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const jobs = result.jobs;
         jobs.push(currentJobDetails);
         chrome.storage.local.set({ jobs: jobs }, () => {
-          console.log('Job saved successfully!');
-          window.close();
+          saveJobButton.innerHTML = 'Saved <span class="tick-icon">✔️</span>';
+          saveJobButton.style.opacity = 0.5;
+          saveJobButton.disabled = true;
+          setTimeout(() => {
+            window.close();
+          }, 2000);
         });
       });
+    } else {
+      alert('Could not save job details. Please try again.');
     }
   });
 
