@@ -13,9 +13,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (response) {
         currentJobDetails = response;
         jobDetailsContainer.innerHTML = `
-          <div style="display: flex;align-items: center;"><img style="width: 48px; height: 48px; margin-right: 3px;" src="${response.logo}"><h2>${response.title}</h2></div>
-          <div style="display: flex;justify-content: space-between;align-items: center;"><h3 style="font-weight: 500;">${response.company}</h3><p> ${response.location}</p></div>
-          <div style="margin: 0 auto;width: fit-content;"><strong><a href="${response.url}" target="_blank">Apply now</a></strong></div>
+          <div style="display: flex;align-items: center;"><div class="company-logo" style="margin-right: 12px;"><img style="width: 48px; height: 48px;" src="${response.logo}"></div><div><h2 class="job-title">${response.title}</h2><h3 style="font-weight: 500;" class="company-name">${response.company}</h3></div></div>
+          <div style="display: flex;justify-content: space-between;align-items: center;width: 72%; margin: 0 auto;"><p style="font-size: larger;color: #b5b5b5"> ${response.location}</p><p class="tag">On-site</p></div>
+          <div style="margin: 0 auto;display: flex;justify-content: space-between;align-items: center;"><p class="tag">Full-time</p><strong><a href="${response.url}" target="_blank">Apply now</a></strong></div>
         `;
       }
     });
